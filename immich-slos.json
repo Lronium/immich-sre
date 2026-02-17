@@ -1,0 +1,141 @@
+{
+    "name": "Being able to upload new photos",
+    "actions": [
+        {
+            "name": "Server register upload request and send it to database",
+            "dependencies": ["immich-database"],
+            "slos": [
+                {
+                    "name": "immich-server",
+                    "level": "Supporting",
+                    "type": "Availability",
+                    "metric": "99.9% of requests to 'init upload' endpoint complete with 200 code and [asset_id] exists. 413/415/422 (validation/limits), 499 (client abort) are excluded from total counter.",
+                    "metric_source": "Log messages",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-server",
+                    "level": "Supporting",
+                    "type": "Auth failure rate",
+                    "metric": "401_403_rate <= 1% of init-upload requests",
+                    "metric_source": "Log messages",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-server",
+                    "level": "Supporting",
+                    "type": "Server processing latency excluding upload transfer time",
+                    "metric": "99.9% [server_processing_duration_seconds] for init-upload endpoint ≤ 1s (excluding transfer time)",
+                    "metric_source": "Prometheus histogram / OTel metrics",
+                    "window": "28d"
+                }
+            ]
+        },
+        {
+            "name": "Database metadata transaction",
+            "dependencies": [],
+            "slos": [
+                {
+                    "name": "immich-database",
+                    "level": "Supporting",
+                    "type": "Availability",
+                    "metric": "99% >= [photo_metadata_commit_success_total]/[photo_metadata_commit_total] complete with committed metadata",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-database",
+                    "level": "Supporting",
+                    "type": "Latency",
+                    "metric": ">=99% commits finish <=0.6s",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                }
+            ]
+        },
+        {
+            "name": "Server writes raw file in filesystem",
+            "dependencies": [],
+            "slos": [
+                {
+                    "name": "FS",
+                    "level": "Supporting",
+                    "type": "Availability",
+                    "metric": "99% of requests complete without EIO, ENOSPC, permission, timeout errors",
+                    "metric_source": "Log messages",
+                    "window": "28d"
+                },
+                {
+                    "name": "FS",
+                    "level": "Supporting",
+                    "type": "Latency",
+                    "metric": "99% [raw_file_write_duration_seconds] operations complete in 2s for payload < 10MB",
+                    "metric_source": "Prometheus histogram / OTel metrics",
+                    "window": "28d"
+                },
+                {
+                    "name": "FS",
+                    "level": "Supporting",
+                    "type": "Latency",
+                    "metric": "99% [raw_file_write_duration_seconds] operations complete in 15s for payload >= 10MB",
+                    "metric_source": "Prometheus histogram / OTel metrics",
+                    "window": "28d"
+                }
+            ]
+        },
+        {
+            "name": "Background workers updates gallery",
+            "dependencies": [],
+            "slos": [
+                {
+                    "name": "immich-redis",
+                    "level": "Supporting",
+                    "type": "Availability",
+                    "metric": "99% of lock/cache/queue commands successful",
+                    "metric_source": "Log messages",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-redis",
+                    "level": "Supporting",
+                    "type": "Job completion latency",
+                    "metric": "99% jobs complete within 4s",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-redis",
+                    "level": "Supporting",
+                    "type": "Job completion latency",
+                    "metric": "99.9% jobs complete within 1m",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                }
+            ]
+        },
+        {
+            "name": "Web Service displays updated gallery",
+            "dependencies": ["immich-server"],
+            "slos": [
+                {
+                    "name": "Whole CUJ completes",
+                    "level": "Primary",
+                    "type": "Availability",
+                    "metric": "99.9% uploads become retrievable (GET /assets/{asset_id} 200 AND download endpoint returns 206 for range 0-1023 bytes) within 60s",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d",
+                    "total": "count(finalized_upload_events) excluding 499",
+                    "good": "finalized uploads where asset retrievable within 60s"
+                },
+                {
+                    "name": "Whole CUJ completes",
+                    "level": "Supporting",
+                    "type": "Fast path (UX)",
+                    "metric": "99% uploads become available within 4s after upload finalized timestamp",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                }
+            ]
+        }
+    ]
+}
