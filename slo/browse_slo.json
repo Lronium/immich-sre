@@ -1,0 +1,109 @@
+{
+    "name": "Being able to browse photo",
+    "actions": [
+        {
+            "name": "/GET request with /api/assets/{id}/ payload registered by server",
+            "dependencies": ["immich-server"],
+            "slos": [
+                {
+                    "name": "immich-server",
+                    "level": "Supporting",
+                    "type": "Auth failure rate",
+                    "metric": "401_403_rate <= 1% of GET requests <= 50ms",
+                    "metric_source": "Log messages",
+                    "window": "28d"
+                }
+            ]
+        },
+        {
+            "name": "Metadata retrieval from DB",
+            "dependencies": ["immich-database"],
+            "slos": [
+                {
+                    "name": "immich-database",
+                    "level": "Supporting",
+                    "type": "Latency",
+                    "metric": ">=99% Metadata request to DB handled <= 250ms",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-database",
+                    "level": "Supporting",
+                    "type": "Availability",
+                    "metric": "99% >= [photo_metadata_requst_success]/[photo_metadata_request_total] requests complete successfully",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                }
+            ]
+        },
+        {
+            "name": "Metadata requests served by cache",
+            "dependencies": ["immich-database", "immich-redis"],
+            "slos": [
+                {
+                    "name": "immich-redis",
+                    "level": "Supporting",
+                    "type": "Cache effectiveness",
+                    "metric": ">=95% cache hits served within 100ms",
+                    "metric_source": "Custom Prometheus metric",
+                    "window": "28d"
+                },
+                {
+                    "name": "immich-redis",
+                    "level": "Supporting",
+                    "type": "Availability",
+                    "metric": "99% of lock/cache/queue commands successful",
+                    "metric_source": "Log messages",
+                    "window": "28d"
+                },
+                {
+                  "name": "immich-database",
+                  "level": "Supporting",
+                  "type": "Latency",
+                  "metric": ">=99% cache miss requests served via DB within 300ms"
+                }
+            ]
+        },
+        {
+          "name": "File storage read",
+          "dependencies": ["object-storage"],
+          "slos": [
+            {
+              "name": "FS",
+              "level": "Supporting",
+              "type": "Latency",
+              "metric": ">=99% payload (<= 64KB) read from storage <= 250ms"
+            },
+            {
+              "name": "FS",
+              "level": "Supporting",
+              "type": "Availability",
+              "metric": "99.9% reads complete without EIO/timeout"
+            }
+          ]
+        },
+        {
+            "name": "GET request returned target photo",
+            "dependencies": ["immich-server"],
+            "slos": [
+                {
+                  "name": "Whole CUJ completes",
+                  "level": "Primary",
+                  "type": "Availability",
+                  "metric": "99% requests are good",
+                  "window": "28d",
+                  "total": "count(GET /assets/{id}) excluding 499, network disconnects before headers sent",
+                  "good": "requests returning 206 for range 0-64KB AND content-length > 0 AND correct content-type (image/*) within 600ms"
+                },
+                {
+                  "name": "Whole CUJ completes",
+                  "level": "Supporting",
+                  "type": "Availability",
+                  "metric": "99.9% GET /assets/{id} where asset is known to be deleted return 404",
+                  "window": "28d"
+                }
+            ]
+        }
+    ]
+}
