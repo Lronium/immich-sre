@@ -6,12 +6,16 @@
             "dependencies": ["immich-server"],
             "slos": [
                 {
-                    "name": "immich-server",
-                    "level": "Supporting",
-                    "type": "Auth failure rate",
-                    "metric": "401_403_rate <= 1% of GET requests <= 50ms",
-                    "metric_source": "Log messages",
-                    "window": "28d"
+                  "type": "Availability",
+                  "metric": "401_403_rate <= 1% of GET requests",
+                  "name": "immich-server",
+                  "level": "Supporting"
+                },
+                {
+                  "type": "Latency",
+                  "metric": ">=99% request routing + handler start <= 50ms",
+                  "name": "immich-server",
+                  "level": "Supporting"
                 }
             ]
         },
@@ -44,7 +48,7 @@
                 {
                     "name": "immich-redis",
                     "level": "Supporting",
-                    "type": "Cache effectiveness",
+                    "type": "Cache hit latency",
                     "metric": ">=95% cache hits served within 100ms",
                     "metric_source": "Custom Prometheus metric",
                     "window": "28d"
@@ -52,14 +56,14 @@
                 {
                     "name": "immich-redis",
                     "level": "Supporting",
-                    "type": "Availability",
+                    "type": "Cache availability",
                     "metric": "99% of lock/cache/queue commands successful",
                     "metric_source": "Log messages",
                     "window": "28d"
                 },
                 {
                   "name": "immich-database",
-                  "level": "Supporting",
+                  "level": "Cache fallback latency",
                   "type": "Latency",
                   "metric": ">=99% cache miss requests served via DB within 300ms"
                 }
@@ -73,7 +77,7 @@
               "name": "FS",
               "level": "Supporting",
               "type": "Latency",
-              "metric": ">=99% payload (<= 64KB) read from storage <= 250ms"
+              "metric": ">=99% payload range read (bytes 0-65535) read from storage <= 250ms"
             },
             {
               "name": "FS",
@@ -105,5 +109,14 @@
                 }
             ]
         }
-    ]
+    ],
+    "latency_budget": {
+      "total": "600ms",
+      "breakdown": {
+        "api": "50ms",
+        "cache": "100ms",
+        "db": "300ms",
+        "storage": "250ms"
+      }
+    }
 }
